@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sunday Football · Week 9 Live Tracker</title>
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#141a24; --panel2:#1b2431; --line:#263243;
+    --text:#eef3fa; --muted:#8c9bb0; --red:#e31837; --gold:#ffb81c;
+    --green:#3ddc84; --live:#ff4d4d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 15% -10%,#1c2434 0%,var(--bg) 60%);
+       color:var(--text);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 20px 50px}
+  header{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:18px}
+  h1{font-size:22px;letter-spacing:.5px;margin:0}
+  h1 .week{color:var(--gold)}
+  .sub{color:var(--muted);font-size:13px}
+  .clock{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+  .clock b{color:var(--text)}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+  button{cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--text);
+         padding:7px 12px;border-radius:8px;font-size:12.5px;transition:.15s}
+  button:hover{border-color:var(--gold);color:var(--gold)}
+  button.primary{background:var(--red);border-color:var(--red);color:#fff;font-weight:600}
+  button.primary:hover{background:#ff2a4a;color:#fff}
+  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;
+        padding:4px 10px;font-size:11.5px;color:var(--muted);background:var(--panel)}
+  .chip b{color:var(--text)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block}
+  .dot.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+  .dot.live{background:var(--live);animation:pulse 1.3s infinite}
+  @keyframes pulse{50%{opacity:.25}}
+  @keyframes flash{0%,100%{background:rgba(227,24,55,.18)}50%{background:rgba(227,24,55,.5)}}
+  .banner{display:none;border:1px solid var(--red);border-radius:14px;padding:16px 18px;margin:0 0 18px;
+          background:rgba(227,24,55,.14);animation:flash 1s 3}
+  .banner.show{display:block}
+  .banner .tag{font-size:11px;letter-spacing:2px;color:var(--gold);font-weight:700}
+  .banner h2{margin:4px 0 6px;font-size:24px;color:#fff}
+  .banner p{margin:2px 0;color:#ffd9df}
+  .banner .score{font-size:18px;font-weight:700;color:var(--gold)}
+  .grid{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;margin-bottom:20px}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h3{margin:0 0 12px;font-size:12px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase}
+  .focus{border:1px solid rgba(227,24,55,.45);background:linear-gradient(160deg,#1d1620,var(--panel) 55%)}
+  .matchup{display:flex;align-items:center;justify-content:center;gap:18px;margin:6px 0 14px}
+  .team{text-align:center;width:120px}
+  .team img{width:56px;height:56px;object-fit:contain}
+  .team .abbr{display:block;font-weight:700;letter-spacing:1px;margin-top:4px}
+  .team .rec{font-size:11px;color:var(--muted)}
+  .score{font-size:44px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:2px}
+  .score .dash{color:var(--muted);font-size:26px;margin:0 8px}
+  .statusline{text-align:center;color:var(--gold);font-weight:600;margin-bottom:10px}
+  .kv{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;font-size:12.5px}
+  .kv div{background:var(--panel2);border-radius:8px;padding:8px 10px;border:1px solid var(--line)}
+  .kv span{display:block;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.8px}
+  .kv b{font-weight:600}
+  .lastplay{margin-top:12px;padding:10px 12px;border-left:3px solid var(--gold);background:var(--panel2);
+            border-radius:0 8px 8px 0;font-size:12.5px}
+  .lastplay span{color:var(--muted);display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.8px}
+  .slate-head{display:flex;align-items:baseline;gap:10px;margin:26px 0 10px}
+  .slate-head h2{font-size:16px;margin:0}
+  .slot{color:var(--gold);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin:14px 0 8px}
+  .games{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:10px}
+  .game{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px 12px}
+  .game.chiefs{border-color:rgba(227,24,55,.6);box-shadow:0 0 0 1px rgba(227,24,55,.15) inset}
+  .game.live{border-color:rgba(255,77,77,.55)}
+  .grow{display:flex;align-items:center;gap:8px;padding:4px 0}
+  .grow img{width:22px;height:22px;object-fit:contain}
+  .grow .ab{font-weight:700;width:38px;font-size:12px}
+  .grow .sc{margin-left:auto;font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+  .gstatus{display:flex;justify-content:space-between;align-items:center;margin-top:7px;
+           padding-top:7px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
+  .gstatus .st{font-weight:700;letter-spacing:.5px}
+  .gstatus .st.live{color:var(--live)}
+  .gstatus .st.final{color:var(--muted)}
+  .gstatus .st.pre{color:var(--gold)}
+  footer{margin-top:30px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted);font-size:12px}
+  footer code{background:var(--panel2);padding:2px 6px;border-radius:5px;color:var(--gold)}
+  .err{color:var(--live)}
+  #log{margin:0;padding-left:18px}
+  #log li{margin:3px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>SUNDAY FOOTBALL <span class="week">· WEEK 9</span></h1>
+    <div class="sub">Live scores · November 8, 2026 · data: ESPN</div>
+    <div class="clock" id="clock"></div>
+  </header>
+
+  <div class="toolbar">
+    <span class="chip"><span class="dot" id="feedDot"></span> feed <b id="feedState">connecting…</b></span>
+    <span class="chip">refresh in <b id="countdown">30s</b></span>
+    <span class="chip"><span class="dot" id="monDot"></span> OS monitor <b id="monState">checking…</b></span>
+    <button id="refreshBtn">Refresh now</button>
+    <button id="notifyBtn">Enable browser alerts</button>
+    <button class="primary" id="testBtn">Test TD alert</button>
+  </div>
+
+  <div class="banner" id="banner">
+    <div class="tag" id="bannerTag">CHIEFS TOUCHDOWN</div>
+    <h2 id="bannerTitle">TOUCHDOWN, KANSAS CITY!</h2>
+    <div class="score" id="bannerScore"></div>
+    <p id="bannerPlay"></p>
+    <p id="bannerMeta"></p>
+  </div>
+
+  <div class="grid">
+    <section class="card focus">
+      <h3>Chiefs Game Center · NYJ @ KC</h3>
+      <div class="matchup">
+        <div class="team"><img id="awayLogo" alt=""><span class="abbr" id="awayAbbr">NYJ</span><span class="rec" id="awayRec">2-6</span></div>
+        <div class="score"><span id="awayScore">0</span><span class="dash">–</span><span id="homeScore">0</span></div>
+        <div class="team"><img id="homeLogo" alt=""><span class="abbr" id="homeAbbr">KC</span><span class="rec" id="homeRec">5-2</span></div>
+      </div>
+      <div class="statusline" id="gameStatus">Scheduled · 1:00 PM ET</div>
+      <div class="kv">
+        <div><span>Kickoff / clock</span><b id="kickoff">1:00 PM ET · Arrowhead</b></div>
+        <div><span>TD alerts</span><b id="armed" style="color:var(--green)">ARMED</b></div>
+        <div><span>Chiefs TDs today</span><b id="tdCount">0</b></div>
+        <div><span>Last check</span><b id="lastCheck">—</b></div>
+      </div>
+      <div class="lastplay"><span>Last scoring play</span><div id="lastPlay">No scoring plays yet — game hasn't kicked off.</div></div>
+    </section>
+
+    <section class="card">
+      <h3>Notification system</h3>
+      <p style="color:var(--muted);margin:0 0 10px">When Kansas City scores, the monitor fires these channels:</p>
+      <div class="kv">
+        <div><span>1 · macOS banner</span><b>Notification Center</b></div>
+        <div><span>2 · Sound</span><b>Hero alert</b></div>
+        <div><span>3 · LED panel</span><b id="ledState">checking…</b></div>
+        <div><span>4 · This page</span><b>Red flash + banner</b></div>
+      </div>
+      <h3 style="margin-top:18px">Alert log</h3>
+      <ul id="log"><li style="color:var(--muted)">No touchdowns yet — waiting for kickoff.</li></ul>
+    </section>
+  </div>
+
+  <div class="slate-head"><h2>Full Sunday slate</h2><span class="sub" id="slateCount"></span></div>
+  <div id="slate"></div>
+
+  <footer>
+    <div>Tracker polls ESPN's public feed every 30s. The OS monitor (<code>./ctl.sh start</code>) polls every 20s and owns macOS notifications, sound, and the PixelJoy LED scoreboard ticker. <code>./ctl.sh status</code> · <code>./ctl.sh test</code> · <code>./ctl.sh stop</code></div>
+    <div style="margin-top:6px">Touchdown detection: Kansas City scoring plays with type/text containing "Touchdown" (plus a +6/+7/+8 score-jump fallback), de-duplicated by play ID.</div>
+  </footer>
+</div>
+
+<script>
+const EVENT_ID = '401873045';
+const SCOREBOARD = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=20261108';
+const SUMMARY = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=' + EVENT_ID;
+const REFRESH_MS = 30000;
+const KICKOFF = new Date('2026-11-08T18:00:00Z');
+
+let seen = null;            // null => first load, seed without alerting
+let tdCount = 0;
+let nextRefresh = Date.now() + REFRESH_MS;
+let audioCtx = null;
+const $ = id => document.getElementById(id);
+
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function logo(abbr){ return 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/' + abbr.toLowerCase() + '.png'; }
+function qLabel(p){ return ({1:'1ST',2:'2ND',3:'3RD',4:'4TH',5:'OT'})[p] || ('Q'+p); }
+
+function tick(){
+  const now = new Date();
+  $('clock').innerHTML = now.toLocaleString([], {weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'}) +
+    ' <b>' + (Intl.DateTimeFormat().resolvedOptions().timeZone || 'local') + '</b>';
+  const secs = Math.max(0, Math.round((nextRefresh - Date.now())/1000));
+  $('countdown').textContent = secs + 's';
+  const diff = KICKOFF - now;
+  if (diff > 0 && $('gameStatus').textContent.includes('Scheduled')) {
+    const h = Math.floor(diff/3600000), m = Math.floor(diff%3600000/60000), s = Math.floor(diff%60000/1000);
+    $('kickoff').textContent = 'Kickoff in ' + h + 'h ' + m + 'm ' + s + 's · Arrowhead';
+  }
+}
+setInterval(tick, 1000); tick();
+
+function beep(){
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    [0, .18, .36].forEach((t,i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'square'; o.frequency.value = [523,659,784][i];
+      g.gain.setValueAtTime(.0001, audioCtx.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(.09, audioCtx.currentTime+t+.02);
+      g.gain.exponentialRampToValueAtTime(.0001, audioCtx.currentTime+t+.16);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(audioCtx.currentTime+t); o.stop(audioCtx.currentTime+t+.17);
+    });
+  } catch(e) { /* audio optional */ }
+}
+
+function isKcTd(p){
+  if ((p.team && p.team.abbreviation) !== 'KC') return false;
+  const blob = [p.type && p.type.text, p.type && p.type.abbreviation, p.scoringType, p.text].join(' ').toLowerCase();
+  return blob.includes('touchdown') || /\btd\b/.test(blob);
+}
+
+function scoreLine(td, game){
+  const home = game.home, away = game.away;
+  return home === 'KC' ? `${away} ${td.awayScore} - KC ${td.homeScore}` : `KC ${td.awayScore} - ${home} ${td.homeScore}`;
+}
+
+function fireAlert(td, game, isTest){
+  tdCount++;
+  $('tdCount').textContent = tdCount;
+  const line = scoreLine(td, game);
+  $('bannerTag').textContent = isTest ? 'TEST ALERT · NOT A REAL TOUCHDOWN' : 'CHIEFS TOUCHDOWN · WEEK 9';
+  $('bannerTitle').textContent = isTest ? 'TEST: TOUCHDOWN, KANSAS CITY!' : 'TOUCHDOWN, KANSAS CITY!';
+  $('bannerScore').textContent = line + '   ·   ' + qLabel(td.period) + ' ' + td.clock;
+  $('bannerPlay').textContent = (td.type || 'Touchdown') + ': ' + td.text;
+  $('bannerMeta').textContent = isTest ? 'Simulated alert to verify macOS notification, sound, LED panel, and this banner.' : 'Detected from ESPN play-by-play at ' + new Date().toLocaleTimeString();
+  const b = $('banner'); b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+  beep();
+  if (!isTest && 'Notification' in window && Notification.permission === 'granted') {
+    try { new Notification('CHIEFS TOUCHDOWN!', {body: td.text + '  |  ' + line}); } catch(e){}
+  }
+  const ul = $('log');
+  if (ul.children.length === 1 && ul.children[0].style.color) ul.innerHTML = '';
+  const li = document.createElement('li');
+  li.innerHTML = '<b style="color:var(--gold)">' + (isTest ? 'TEST' : 'TD #' + tdCount) + '</b> · ' + line + ' · ' + esc(td.text);
+  ul.prepend(li);
+}
+
+function renderFocus(game, sbEvent){
+  const comp = game.header.competitions[0];
+  const home = comp.competitors.find(c => c.homeAway === 'home');
+  const away = comp.competitors.find(c => c.homeAway === 'away');
+  const st = comp.status, t = st.type;
+  $('awayLogo').src = logo(away.team.abbreviation);
+  $('homeLogo').src = logo(home.team.abbreviation);
+  $('awayAbbr').textContent = away.team.abbreviation;
+  $('homeAbbr').textContent = home.team.abbreviation;
+  const rec = c => (c.records && c.records[0] && c.records[0].summary) || '';
+  $('awayRec').textContent = rec(away); $('homeRec').textContent = rec(home);
+  $('awayScore').textContent = away.score ?? 0;
+  $('homeScore').textContent = home.score ?? 0;
+  const detail = t.detail || t.shortDetail || '';
+  $('gameStatus').textContent = t.state === 'post' ? 'FINAL · ' + detail :
+                                t.state === 'in' ? 'LIVE · ' + detail : 'Scheduled · ' + (t.shortDetail || '1:00 PM ET');
+  if (t.state !== 'pre') $('kickoff').textContent = qLabel(st.period) + ' · ' + (st.displayClock || '0:00') + ' · Arrowhead Stadium';
+  const plays = game.scoringPlays || [];
+  if (plays.length) {
+    const p = plays[plays.length-1];
+    $('lastPlay').textContent = qLabel(p.period.number) + ' ' + p.clock.displayValue + ' · ' + p.team.abbreviation + ' · ' + p.text;
+  }
+  $('armed').textContent = t.state === 'post' ? 'GAME FINAL' : 'ARMED';
+  $('armed').style.color = t.state === 'post' ? 'var(--muted)' : 'var(--green)';
+  window.__game = {home: home.team.abbreviation, away: away.team.abbreviation};
+  return {home: home.team.abbreviation, away: away.team.abbreviation};
+}
+
+function renderSlate(sb){
+  const evts = (sb.events || []).slice().sort((a,b) => new Date(a.date) - new Date(b.date));
+  $('slateCount').textContent = evts.length + ' games';
+  const slots = {};
+  evts.forEach(e => {
+    const d = new Date(e.date);
+    const label = d.toLocaleString('en-US', {timeZone:'America/New_York', hour:'numeric', minute:'2-digit', hour12:true}) + ' ET';
+    (slots[label] = slots[label] || []).push(e);
+  });
+  let html = '';
+  Object.keys(slots).forEach(label => {
+    html += '<div class="slot">' + esc(label) + ' kickoff</div><div class="games">';
+    slots[label].forEach(e => {
+      const c = e.competitions[0];
+      const home = c.competitors.find(x => x.homeAway === 'home');
+      const away = c.competitors.find(x => x.homeAway === 'away');
+      const st = e.status.type;
+      const stateCls = st.state === 'in' ? 'live' : st.state === 'post' ? 'final' : 'pre';
+      const stateTxt = st.state === 'in' ? '● LIVE' : st.state === 'post' ? 'FINAL' : 'PRE';
+      const isChiefs = e.id === EVENT_ID;
+      html += '<div class="game' + (isChiefs ? ' chiefs' : '') + (st.state === 'in' ? ' live' : '') + '">' +
+        '<div class="grow"><img src="' + logo(away.team.abbreviation) + '" alt=""><span class="ab">' + away.team.abbreviation + '</span><span class="sc">' + (away.score ?? 0) + '</span></div>' +
+        '<div class="grow"><img src="' + logo(home.team.abbreviation) + '" alt=""><span class="ab">' + home.team.abbreviation + '</span><span class="sc">' + (home.score ?? 0) + '</span></div>' +
+        '<div class="gstatus"><span class="st ' + stateCls + '">' + stateTxt + '</span><span>' + esc(st.detail || st.shortDetail || '') + '</span></div>' +
+      '</div>';
+    });
+    html += '</div>';
+  });
+  $('slate').innerHTML = html;
+}
+
+const IS_LOCAL = location.protocol === 'file:' ||
+                 location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+function checkMonitor(){
+  if (!IS_LOCAL) {
+    $('monDot').className = 'dot on';
+    $('monState').textContent = 'local Mac · notifications + LED';
+    $('ledState').textContent = 'runs on the tracker Mac';
+    return;
+  }
+  fetch('http://127.0.0.1:8787/status.json', {cache:'no-store'})
+    .then(r => r.json())
+    .then(s => {
+      $('monDot').className = 'dot ' + (s.running ? 'on' : '');
+      $('monState').textContent = s.running ? 'RUNNING · poll ' + s.poll_seconds + 's · TDs ' + s.td_count : 'stopped';
+      $('ledState').textContent = s.led_available ? 'connected (live ticker)' : 'not connected';
+    })
+    .catch(() => {
+      $('monDot').className = 'dot';
+      $('monState').textContent = 'status unavailable (page still polls ESPN directly)';
+      $('ledState').textContent = 'see ./ctl.sh status';
+    });
+}
+
+async function poll(){
+  nextRefresh = Date.now() + REFRESH_MS;
+  $('feedState').textContent = 'loading…';
+  try {
+    const [sb, sm] = await Promise.all([
+      fetch(SCOREBOARD, {cache:'no-store'}).then(r => { if(!r.ok) throw new Error('scoreboard '+r.status); return r.json(); }),
+      fetch(SUMMARY, {cache:'no-store'}).then(r => { if(!r.ok) throw new Error('summary '+r.status); return r.json(); })
+    ]);
+    const game = renderFocus(sm);
+    renderSlate(sb);
+    $('feedState').textContent = 'live · ' + new Date().toLocaleTimeString();
+    $('feedDot').className = 'dot on';
+    $('lastCheck').textContent = new Date().toLocaleTimeString();
+    const plays = sm.scoringPlays || [];
+    if (seen === null) {
+      seen = new Set(plays.map(p => String(p.id)));
+      tdCount = plays.filter(isKcTd).length;
+      $('tdCount').textContent = tdCount;
+    } else {
+      plays.forEach(p => {
+        const id = String(p.id);
+        if (seen.has(id)) return;
+        seen.add(id);
+        if (isKcTd(p)) {
+          fireAlert({
+            text: p.text, type: (p.type && p.type.text) || 'Touchdown',
+            period: p.period.number, clock: p.clock.displayValue,
+            homeScore: p.homeScore, awayScore: p.awayScore
+          }, game, false);
+        }
+      });
+    }
+  } catch(e) {
+    $('feedState').textContent = 'error: ' + e.message;
+    $('feedDot').className = 'dot';
+    console.warn('poll failed', e);
+  }
+  checkMonitor();
+}
+
+$('refreshBtn').onclick = poll;
+$('notifyBtn').onclick = () => {
+  if (!('Notification' in window)) { alert('Browser notifications not available here.'); return; }
+  Notification.requestPermission().then(p => {
+    $('notifyBtn').textContent = p === 'granted' ? 'Browser alerts enabled ✓' : 'Browser alerts: ' + p;
+  });
+  beep();
+};
+$('testBtn').onclick = () => {
+  beep();
+  const g = window.__game || {home:'KC', away:'NYJ'};
+  fireAlert({
+    text:'TEST: Patrick Mahomes 12 Yd pass to Travis Kelce (Harrison Butker Kick)',
+    type:'Passing Touchdown', period:2, clock:'7:42', homeScore:14, awayScore:3
+  }, g, true);
+};
+
+poll();
+setInterval(poll, REFRESH_MS);
+</script>
+</body>
+</html>
